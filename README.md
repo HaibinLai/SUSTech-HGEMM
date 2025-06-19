@@ -67,6 +67,15 @@ C = A * B
 | Case9  | 4096   | 16384  | 14336  | 长条矩阵  | LLama3 8B FFN（batch size=32） |
 | Case10 | 32,768 | 32,768 | 32,768 | 大矩阵测试 | HPL-MxP Benchmark            |
 
+推荐大家代码采用类似BLAS的结构，在main层下，使用driver层，根据不同算子，使用 通用/专用kernel。
+
+BLAS结构示意图
+```
+main
+├── interface # 是否是GEMM
+├── driver # 根据计算规模划分，选择不同算子
+└── Kernel # 底层核心算子
+```
 
 
 ## 二、评分标准
@@ -94,12 +103,8 @@ Score = 70*(YourPerf / MaxPerf) + 30*(1 - Error)
 其中：
 - MaxPerf：所有参赛队伍最佳性能
 - Error：与cuBLAS结果的相对误差 -->
-**程序得分**由基础阶段（80%）和进阶阶段（20%）加权构成。每阶段分为30%的正确性得分与70%性能得分。
 
-$$
-\text{TotalScore} = 0.8 \times \text{BaseScore} + 0.2 \times \text{AdvancedScore}
-$$
-
+**程序得分**由10个测试点分数构成。
 ### 评分标准（ $$N_1$$ 个测试点）
 $$
 \text{BaseScore} = \frac{1}{N_1} \sum_{i=1}^{N_1} \left[ 70 \times \left(\frac{\text{Perf}_i}{\text{MaxPerf}_i}\right) + 30 \times \left(1 - \text{RelError}_i\right) \right]
