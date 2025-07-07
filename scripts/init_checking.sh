@@ -5,6 +5,7 @@ echo "Initializing checking for HGEMM project... Please run this script in the r
 mkdir -p data
 mkdir -p data/input
 mkdir -p data/output
+mkdir -p logs
 
 # 创建build文件夹
 mkdir -p build

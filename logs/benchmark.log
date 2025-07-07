@@ -1,0 +1,91 @@
+🚀 Running Case1 with M=768 N=768 K=768
+===== Processing case: Case1_768x768x768 =====
+Reading Input directory: data/input/Case1_768x768x768 ...
+read data complete, M: 768, N: 768, K: 768
+cuBLAS GEMM Time: 31.7327 ms, gFLOPS: 28.55
+Result sum: 1.13347e+08
+===== Finished processing case: Case1_768x768x768 =====
+✅ Finished Case1, output saved to data/output/result_Case1_768x768x768.txt
+
+🚀 Running Case2 with M=128 N=1024 K=2048
+===== Processing case: Case2_128x1024x2048 =====
+Reading Input directory: data/input/Case2_128x1024x2048 ...
+read data complete, M: 128, N: 1024, K: 2048
+cuBLAS GEMM Time: 46.9204 ms, gFLOPS: 11.4422
+Result sum: 6.71675e+07
+===== Finished processing case: Case2_128x1024x2048 =====
+✅ Finished Case2, output saved to data/output/result_Case2_128x1024x2048.txt
+
+🚀 Running Case3 with M=128 N=2048 K=8192
+===== Processing case: Case3_128x2048x8192 =====
+Reading Input directory: data/input/Case3_128x2048x8192 ...
+read data complete, M: 128, N: 2048, K: 8192
+cuBLAS GEMM Time: 64.1508 ms, gFLOPS: 66.9511
+Result sum: 5.37282e+08
+===== Finished processing case: Case3_128x2048x8192 =====
+✅ Finished Case3, output saved to data/output/result_Case3_128x2048x8192.txt
+
+🚀 Running Case4 with M=512 N=3072 K=1024
+===== Processing case: Case4_512x3072x1024 =====
+Reading Input directory: data/input/Case4_512x3072x1024 ...
+read data complete, M: 512, N: 3072, K: 1024
+cuBLAS GEMM Time: 64.7474 ms, gFLOPS: 49.7507
+Result sum: 4.02834e+08
+===== Finished processing case: Case4_512x3072x1024 =====
+✅ Finished Case4, output saved to data/output/result_Case4_512x3072x1024.txt
+
+🚀 Running Case5 with M=512 N=4096 K=8192
+===== Processing case: Case5_512x4096x8192 =====
+Reading Input directory: data/input/Case5_512x4096x8192 ...
+read data complete, M: 512, N: 4096, K: 8192
+cuBLAS GEMM Time: 87.6068 ms, gFLOPS: 392.204
+Result sum: 4.29543e+09
+===== Finished processing case: Case5_512x4096x8192 =====
+✅ Finished Case5, output saved to data/output/result_Case5_512x4096x8192.txt
+
+🚀 Running Case6 with M=3136 N=576 K=64
+===== Processing case: Case6_3136x576x64 =====
+Reading Input directory: data/input/Case6_3136x576x64 ...
+read data complete, M: 3136, N: 576, K: 64
+cuBLAS GEMM Time: 30.4485 ms, gFLOPS: 7.59352
+Result sum: 2.90988e+07
+===== Finished processing case: Case6_3136x576x64 =====
+✅ Finished Case6, output saved to data/output/result_Case6_3136x576x64.txt
+
+🚀 Running Case7 with M=4096 N=4096 K=4096
+===== Processing case: Case7_4096x4096x4096 =====
+Reading Input directory: data/input/Case7_4096x4096x4096 ...
+read data complete, M: 4096, N: 4096, K: 4096
+cuBLAS GEMM Time: 89.9585 ms, gFLOPS: 1527.8
+Result sum: 1.71801e+10
+===== Finished processing case: Case7_4096x4096x4096 =====
+✅ Finished Case7, output saved to data/output/result_Case7_4096x4096x4096.txt
+
+🚀 Running Case8 with M=1024 N=16384 K=16384
+===== Processing case: Case8_1024x16384x16384 =====
+Reading Input directory: data/input/Case8_1024x16384x16384 ...
+read data complete, M: 1024, N: 16384, K: 16384
+cuBLAS GEMM Time: 362.633 ms, gFLOPS: 1516.01
+Result sum: 6.87197e+10
+===== Finished processing case: Case8_1024x16384x16384 =====
+✅ Finished Case8, output saved to data/output/result_Case8_1024x16384x16384.txt
+
+🚀 Running Case9 with M=4096 N=16384 K=14336
+===== Processing case: Case9_4096x16384x14336 =====
+Reading Input directory: data/input/Case9_4096x16384x14336 ...
+read data complete, M: 4096, N: 16384, K: 14336
+cuBLAS GEMM Time: 507.404 ms, gFLOPS: 3792.13
+Result sum: 6.87195e+10
+===== Finished processing case: Case9_4096x16384x14336 =====
+✅ Finished Case9, output saved to data/output/result_Case9_4096x16384x14336.txt
+
+🚀 Running Case10 with M=32768 N=32768 K=32768
+===== Processing case: Case10_32768x32768x32768 =====
+Reading Input directory: data/input/Case10_32768x32768x32768 ...
+read data complete, M: 32768, N: 32768, K: 32768
+cuBLAS GEMM Time: 9539.81 ms, gFLOPS: 7376.32
+Result sum: 2.74878e+11
+===== Finished processing case: Case10_32768x32768x32768 =====
+✅ Finished Case10, output saved to data/output/result_Case10_32768x32768x32768.txt
+
+🎉 All benchmark cases processed.
