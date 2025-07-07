@@ -10,13 +10,6 @@
 
 // nvcc -O3 -o hgemm_cublas_load src/hgemm_read.cu -lcublas
 
-__global__ void float2half_kernel(const float* input, __half* output, int size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        output[idx] = __float2half(input[idx]);
-    }
-}
-
 bool read_matrices_from_dir(const std::string& dir,
                             std::vector<__half>& A_fp16,
                             std::vector<__half>& B_fp16,
@@ -161,6 +154,11 @@ int main(int argc, char* argv[]) {
 
     std::ofstream outfile(output_file);
     if (outfile.is_open()) {
+        outfile << "Performance Metrics:\n";
+        outfile << "Time (ms): " << duration << "\n";
+        outfile << "GFLOPS: " << gflops << "\n";
+        outfile << "M: " << M << ", N: " << N << ", K: " << K << "\n";
+        outfile << "Result Matrix (C)(part):\n";
         for (int i = 0; i < M_limit; ++i) {
             for (int j = 0; j < N_limit; ++j) {
                 outfile << C[i * N + j] << " ";

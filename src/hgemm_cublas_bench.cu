@@ -10,14 +10,6 @@
 
 // nvcc -O3 -o hgemm_cublas_load src/hgemm_read.cu -lcublas
 
-__global__ void float2half_kernel(const float* input, __half* output, int size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        output[idx] = __float2half(input[idx]);
-    }
-}
-
-// 读取目录下的矩阵文件，并转换为 __half 类型
 bool read_matrices_from_dir(const std::string& dir,
                             std::vector<__half>& A_fp16,
                             std::vector<__half>& B_fp16,
@@ -137,27 +129,27 @@ int main(int argc, char* argv[]) {
     std::cout << "read data complete, "
               << "M: " << M << ", N: " << N << ", K: " << K << std::endl;
 
-    // benchmark cuBLAS GEMM
-    // 测试10次，取平均值
-    const int count = 10;
-    double avg_duration = 0.0;
-    for (size_t i = 0; i < count; i++)
-    {
+    double total_time = 0.0;
+
+    // 循环10次，计算平均时间
+    for(int i = 0; i < 10; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
         hgemm_cublas(A_fp32, B_fp32, C, M, N, K);
         cudaDeviceSynchronize();
         auto end = std::chrono::high_resolution_clock::now();
 
         double duration = std::chrono::duration<double, std::milli>(end - start).count();
-        std::cout << "cuBLAS GEMM Time: " << duration << " ms" << std::endl;
-        avg_duration += duration;
+        total_time += duration;
+        // std::cout << "Iteration " << i + 1 << ": " << duration << " ms" << std::endl;
     }
 
-    avg_duration /= count;
+    double avg_duration = total_time / 10.0;
+    std::cout << "Average Time: " << avg_duration << " ms" << std::endl;
+
     double flops = 2.0 * M * N * K;
     double gflops = flops / (avg_duration / 1000.0) / 1e9;
 
-    std::cout << "cuBLAS GEMM avg Time: " << avg_duration << " ms, "
+    std::cout << "cuBLAS avg GEMM Time: " << avg_duration << " ms, "
               << "avg gFLOPS: " << gflops << std::endl;
 
     float sum = 0.0f;
@@ -173,6 +165,11 @@ int main(int argc, char* argv[]) {
 
     std::ofstream outfile(output_file);
     if (outfile.is_open()) {
+        outfile << "Performance Metrics:\n";
+        outfile << "avg Time (ms): " << avg_duration << "\n";
+        outfile << "avg GFLOPS: " << gflops << "\n";
+        outfile << "M: " << M << ", N: " << N << ", K: " << K << "\n";
+        outfile << "Result Matrix (C)(part):\n";
         for (int i = 0; i < M_limit; ++i) {
             for (int j = 0; j < N_limit; ++j) {
                 outfile << C[i * N + j] << " ";
