@@ -6,21 +6,20 @@ NVCC = nvcc
 NVCC_FLAGS = -arch=sm_70 -O3
 
 SRC_DIR = src
-SRC = $(SRC_DIR)/hgemm.cu
+BLAS_SRC = $(SRC_DIR)/hgemm_read.cu
 
-
-TARGET = hgemm_GPU
+TARGET_CUBLAS = hgemm_read
 
 # Default target
-all: $(TARGET)
+all: $(TARGET_CUBLAS)
 
 # build
-$(TARGET): $(SRC)
-	$(NVCC) $(NVCC_FLAGS) $(SRC) -o $(TARGET)
+$(TARGET_CUBLAS): $(BLAS_SRC)
+	$(NVCC) $(NVCC_FLAGS) $(BLAS_SRC) -o build/$(TARGET_CUBLAS) -lcublas -lcudart
 
 # Clean up
 clean:
-	rm -f $(TARGET)
+	rm -f build/$(TARGET_CUBLAS)
 
 # Phony targets
 .PHONY: all clean
