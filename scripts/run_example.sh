@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # binary
-BIN=./hgemm_cublas_load
+BIN=build/hgemm_cublas
 
 # testcase
 cases=(

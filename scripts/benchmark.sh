@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 二进制程序名
-BIN=./hgemm_cublas_load
+BIN=build/hgemm_cublas
 
 # 案例参数和文件名
 cases=(
