@@ -13,8 +13,11 @@ TARGET_CUBLAS = hgemm_cublas
 # Default target
 all: $(TARGET_CUBLAS)
 
-# build
-$(TARGET_CUBLAS): $(BLAS_SRC)
+# Create build directory
+build:
+	mkdir -p build
+
+$(TARGET_CUBLAS): build $(BLAS_SRC)
 	$(NVCC) $(NVCC_FLAGS) $(BLAS_SRC) -o build/$(TARGET_CUBLAS) -lcublas -lcudart
 
 # Clean up
