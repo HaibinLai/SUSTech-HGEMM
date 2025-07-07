@@ -6,9 +6,9 @@ NVCC = nvcc
 NVCC_FLAGS = -arch=sm_70 -O3
 
 SRC_DIR = src
-BLAS_SRC = $(SRC_DIR)/hgemm_read.cu
+BLAS_SRC = $(SRC_DIR)/hgemm_cublas.cu
 
-TARGET_CUBLAS = hgemm_read
+TARGET_CUBLAS = hgemm_cublas
 
 # Default target
 all: $(TARGET_CUBLAS)
