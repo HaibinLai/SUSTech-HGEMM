@@ -1,0 +1,10 @@
+*.txt
+
+# 生成的矩阵文件
+data/input/matrices_*.txt
+data/output/result_*.txt
+
+# 编译生成的二进制文件
+build/hgemm_cublas
+build/hgemm_cublas_load
+build/*
