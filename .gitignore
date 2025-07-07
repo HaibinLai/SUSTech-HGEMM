@@ -8,3 +8,4 @@ data/output/result_*.txt
 build/hgemm_cublas
 build/hgemm_cublas_load
 build/*
+*.bin

@@ -17,6 +17,7 @@ __global__ void float2half_kernel(const float* input, __half* output, int size) 
     }
 }
 
+// 读取目录下的矩阵文件，并转换为 __half 类型
 bool read_matrices_from_dir(const std::string& dir,
                             std::vector<__half>& A_fp16,
                             std::vector<__half>& B_fp16,
@@ -136,17 +137,28 @@ int main(int argc, char* argv[]) {
     std::cout << "read data complete, "
               << "M: " << M << ", N: " << N << ", K: " << K << std::endl;
 
-    auto start = std::chrono::high_resolution_clock::now();
-    hgemm_cublas(A_fp32, B_fp32, C, M, N, K);
-    cudaDeviceSynchronize();
-    auto end = std::chrono::high_resolution_clock::now();
+    // benchmark cuBLAS GEMM
+    // 测试10次，取平均值
+    const int count = 10;
+    double avg_duration = 0.0;
+    for (size_t i = 0; i < count; i++)
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        hgemm_cublas(A_fp32, B_fp32, C, M, N, K);
+        cudaDeviceSynchronize();
+        auto end = std::chrono::high_resolution_clock::now();
 
-    double duration = std::chrono::duration<double, std::milli>(end - start).count();
+        double duration = std::chrono::duration<double, std::milli>(end - start).count();
+        std::cout << "cuBLAS GEMM Time: " << duration << " ms" << std::endl;
+        avg_duration += duration;
+    }
+
+    avg_duration /= count;
     double flops = 2.0 * M * N * K;
-    double gflops = flops / (duration / 1000.0) / 1e9;
+    double gflops = flops / (avg_duration / 1000.0) / 1e9;
 
-    std::cout << "cuBLAS GEMM Time: " << duration << " ms, "
-              << "gFLOPS: " << gflops << std::endl;
+    std::cout << "cuBLAS GEMM avg Time: " << avg_duration << " ms, "
+              << "avg gFLOPS: " << gflops << std::endl;
 
     float sum = 0.0f;
     for (int i = 0; i < M * N; ++i)

@@ -14,21 +14,27 @@ cases=(
   "Case10 32768 32768 32768"
 )
 
+# 输出根目录
+output_dir="data/input"
+mkdir -p "$output_dir"
+
 for case in "${cases[@]}"; do
-  # 读变量
+  # 拆解变量
   read -r name M N K <<<"$case"
 
-  # 生成文件名
-  filename="data/input/matrices_${name}_${M}x${N}x${K}.txt"
+  # 构建子目录路径（如：data/input/Case1_768x768x768）
+  case_dir="${output_dir}/${name}_${M}x${N}x${K}"
+  mkdir -p "$case_dir"
 
-  echo "Generating $filename with M=$M, N=$N, K=$K"
+  echo "📦 Generating binary matrices in $case_dir (M=$M, N=$N, K=$K)"
 
-  python3 tools/generation.py --M "$M" --N "$N" --K "$K" --output "$filename"
+  # 调用 Python 脚本（已默认生成 .bin 文件）
+  python3 tools/matrix_generation.py --M "$M" --N "$N" --K "$K" --outdir "$case_dir"
 
   if [ $? -ne 0 ]; then
-    echo "Failed to generate $filename"
+    echo "❌ Failed to generate binary matrices for $name"
     exit 1
   fi
 done
 
-echo "All test matrices generated successfully."
+echo "✅ All binary matrix folders generated successfully."

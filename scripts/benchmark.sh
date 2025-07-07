@@ -3,7 +3,11 @@
 # 二进制程序名
 BIN=build/hgemm_cublas
 
-# 案例参数和文件名
+# 输入数据根目录，输出结果根目录
+INPUT_ROOT="data/input"
+OUTPUT_ROOT="data/output"
+
+# 测试案例参数
 cases=(
   "Case1 768 768 768"
   "Case2 128 1024 2048"
@@ -17,26 +21,31 @@ cases=(
   "Case10 32768 32768 32768"
 )
 
+mkdir -p "$OUTPUT_ROOT"
+
 for case in "${cases[@]}"; do
   read -r name M N K <<< "$case"
 
-  input_file="matrices_${name}_${M}x${N}x${K}.txt"
-  output_file="result_${name}_${M}x${N}x${K}.txt"
+  input_dir="${INPUT_ROOT}/${name}_${M}x${N}x${K}"
+  output_file="${OUTPUT_ROOT}/result_${name}_${M}x${N}x${K}.txt"
 
-  echo "Running $name with M=$M N=$N K=$K"
-  if [ ! -f "$input_file" ]; then
-    echo "Input file $input_file not found, skipping..."
+  if [ ! -d "$input_dir" ]; then
+    echo "❌ Input directory $input_dir not found, skipping $name ..."
     continue
   fi
 
-  $BIN --input "$input_file" --output "$output_file"
+  echo "🚀 Running $name with M=$M N=$N K=$K"
+
+  # 运行程序：输出目录指定为 OUTPUT_ROOT，程序内部生成 result_*.txt
+  $BIN --indir "$input_dir" --outdir "$OUTPUT_ROOT"
 
   if [ $? -ne 0 ]; then
-    echo "Run failed for $name"
+    echo "❌ Run failed for $name"
     exit 1
   fi
 
-  echo "Finished $name, output saved to $output_file"
+  echo "✅ Finished $name, output saved to $output_file"
+  echo ""
 done
 
-echo "All cases processed."
+echo "🎉 All benchmark cases processed."
