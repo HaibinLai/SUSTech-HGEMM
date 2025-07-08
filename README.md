@@ -41,6 +41,13 @@ SUSTech-HGEMM/
 - cuBLAS 库
 - Python 3.x (用于数据生成和分析)
 
+
+**初始化：**
+
+```bash
+bash ./scripts/init_checking.sh
+```
+
 ### 2. 数据生成
 
 使用工具脚本生成测试矩阵数据：
