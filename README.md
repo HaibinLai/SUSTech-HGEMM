@@ -53,7 +53,7 @@ bash ./scripts/init_checking.sh
 使用工具脚本生成测试矩阵数据：
 
 ```bash
-./scripts/generation.sh
+bash ./scripts/generation.sh
 ```
 
 其会调用 `/tools/matrix_generation.py` , 您也可以直接使用该脚本生成想要生成的数据：
