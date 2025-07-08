@@ -156,9 +156,10 @@ bash ./scripts/custom_profile.sh
 ./scripts/cuBLAS_benchmark.sh > benchmark.log
 ```
 
-随后可对此进行绘图分析。
+随后可对此进行绘图分析:
 
-
+<!-- 展示图片 -->
+![benchmark](fig/benchmark_results.png)
 
 
 
