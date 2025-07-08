@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# 二进制程序名
+# binary program name
 BIN=build/hgemm_cublas
 
-# 输入数据根目录，输出结果根目录
+# Input data root directory, output result root directory
 INPUT_ROOT="data/input"
-OUTPUT_ROOT="data/output"
+OUTPUT_ROOT="data/output/cublas_results"
 
-# 测试案例参数
+# Test case parameters
 cases=(
   "Case1 768 768 768"
   "Case2 128 1024 2048"
@@ -20,7 +20,7 @@ for case in "${cases[@]}"; do
   read -r name M N K <<< "$case"
 
   input_dir="${INPUT_ROOT}/${name}_${M}x${N}x${K}"
-  output_file="${OUTPUT_ROOT}/result_${name}_${M}x${N}x${K}.txt"
+  output_file="${OUTPUT_ROOT}/cublas_result_${name}_${M}x${N}x${K}.txt"
 
   if [ ! -d "$input_dir" ]; then
     echo "❌ Input directory $input_dir not found, skipping $name ..."
@@ -29,7 +29,6 @@ for case in "${cases[@]}"; do
 
   echo "🚀 Running $name with M=$M N=$N K=$K"
 
-  # 运行程序：输出目录指定为 OUTPUT_ROOT，程序内部生成 result_*.txt
   $BIN --indir "$input_dir" --outdir "$OUTPUT_ROOT"
 
   if [ $? -ne 0 ]; then
@@ -37,7 +36,7 @@ for case in "${cases[@]}"; do
     exit 1
   fi
 
-  echo "✅ Finished $name, output saved to $output_file"
+  echo "✅ Finished $name, output saved to cublas_result_${name}_${M}x${N}x${K}.txt"
   echo ""
 done
 

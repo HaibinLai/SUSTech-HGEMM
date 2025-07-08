@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 定义测试案例参数：Case编号 M N K
+# Test Cases
 cases=(
   "Case1 768 768 768"
   "Case2 128 1024 2048"
@@ -14,21 +14,21 @@ cases=(
   "Case10 32768 32768 32768"
 )
 
-# 输出根目录
+# Output root directory
 output_dir="data/input"
 mkdir -p "$output_dir"
 
 for case in "${cases[@]}"; do
-  # 拆解变量
+  # Split variables
   read -r name M N K <<<"$case"
 
-  # 构建子目录路径（如：data/input/Case1_768x768x768）
+  # Construct subdirectory path (e.g., data/input/Case1_768x768x768)
   case_dir="${output_dir}/${name}_${M}x${N}x${K}"
   mkdir -p "$case_dir"
 
   echo "📦 Generating binary matrices in $case_dir (M=$M, N=$N, K=$K)"
 
-  # 调用 Python 脚本（已默认生成 .bin 文件）
+  # Call Python script (assumed to generate .bin files by default)
   python3 tools/matrix_generation.py --M "$M" --N "$N" --K "$K" --outdir "$case_dir"
 
   if [ $? -ne 0 ]; then
