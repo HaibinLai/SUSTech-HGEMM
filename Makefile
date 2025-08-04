@@ -18,23 +18,27 @@ TARGET_CUBLAS_BENCH = hgemm_cublas_bench
 TARGET_COMPARE = hgemm_compare
 
 # Default target
-all: $(TARGET_CUBLAS) $(TARGET_CUBLAS_BENCH) $(TARGET_COMPARE) $(TARGET_CUSTOM)
+all: $(TARGET_CUSTOM)\
+#  $(TARGET_CUBLAS) \
+#  $(TARGET_CUBLAS_BENCH) \
+#  $(TARGET_COMPARE) \
+# $(TARGET_CUSTOM)
 
 # Create build directory
 build:
 	mkdir -p build
 
-$(TARGET_CUBLAS): build $(BLAS_SRC)
-	$(NVCC) $(NVCC_FLAGS) $(BLAS_SRC) -o build/$(TARGET_CUBLAS) -lcublas -lcudart
+# $(TARGET_CUBLAS): build $(BLAS_SRC)
+# 	$(NVCC) $(NVCC_FLAGS) $(BLAS_SRC) -o build/$(TARGET_CUBLAS) -lcublas -lcudart
 
-$(TARGET_CUBLAS_BENCH): build $(BENCH_SRC)
-	$(NVCC) $(NVCC_FLAGS) $(BENCH_SRC) -o build/$(TARGET_CUBLAS_BENCH) -lcublas -lcudart
+# $(TARGET_CUBLAS_BENCH): build $(BENCH_SRC)
+# 	$(NVCC) $(NVCC_FLAGS) $(BENCH_SRC) -o build/$(TARGET_CUBLAS_BENCH) -lcublas -lcudart
 
-$(TARGET_COMPARE): build $(COMPARE_SRC)
-	$(NVCC) $(NVCC_FLAGS) $(COMPARE_SRC) -o build/$(TARGET_COMPARE) -lcublas -lcudart
+# $(TARGET_COMPARE): build $(COMPARE_SRC)
+# 	$(NVCC) $(NVCC_FLAGS) $(COMPARE_SRC) -o build/$(TARGET_COMPARE) -lcublas -lcudart
 
 $(TARGET_CUSTOM): build $(CUSTOM_SRC)
-	$(NVCC) $(NVCC_FLAGS) $(CUSTOM_SRC) -o build/$(TARGET_CUSTOM) -lcudart
+	$(NVCC) $(NVCC_FLAGS) $(CUSTOM_SRC) -o build/$(TARGET_CUSTOM) -lcudart -lcublas
 
 # Clean up
 clean:
