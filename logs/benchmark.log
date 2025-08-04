@@ -1,51 +1,51 @@
 (haibin2) (base) cc@v100-inferencetesting:~/haibin2/SUSTech-HGEMM$ bash scripts/custom_benchmark.sh 
 🚀 Running Case1 with M=768 N=768 K=768
-Custom FP16 Kernel Time: 0.602549 ms, gFLOPS: 1503.56
+Custom FP16 Kernel Time: 0.619552 ms, gFLOPS: 1462.3
 Custom Kernel Result sum: 1.13347e+08
 ✅ Finished Case1, output saved to custom_result_Case1_768x768x768.txt
 
 🚀 Running Case2 with M=128 N=1024 K=2048
-Custom FP16 Kernel Time: 0.470053 ms, gFLOPS: 1142.15
+Custom FP16 Kernel Time: 0.446188 ms, gFLOPS: 1203.24
 Custom Kernel Result sum: 6.71674e+07
 ✅ Finished Case2, output saved to custom_result_Case2_128x1024x2048.txt
 
 🚀 Running Case3 with M=128 N=2048 K=8192
-Custom FP16 Kernel Time: 2.59435 ms, gFLOPS: 1655.51
+Custom FP16 Kernel Time: 2.40708 ms, gFLOPS: 1784.3
 Custom Kernel Result sum: 5.37282e+08
 ✅ Finished Case3, output saved to custom_result_Case3_128x2048x8192.txt
 
 🚀 Running Case4 with M=512 N=3072 K=1024
-Custom FP16 Kernel Time: 1.66512 ms, gFLOPS: 1934.53
+Custom FP16 Kernel Time: 1.72396 ms, gFLOPS: 1868.51
 Custom Kernel Result sum: 4.02834e+08
 ✅ Finished Case4, output saved to custom_result_Case4_512x3072x1024.txt
 
 🚀 Running Case5 with M=512 N=4096 K=8192
-Custom FP16 Kernel Time: 15.5674 ms, gFLOPS: 2207.15
+Custom FP16 Kernel Time: 16.7436 ms, gFLOPS: 2052.11
 Custom Kernel Result sum: 4.29542e+09
 ✅ Finished Case5, output saved to custom_result_Case5_512x4096x8192.txt
 
 🚀 Running Case6 with M=3136 N=576 K=64
-Custom FP16 Kernel Time: 0.275888 ms, gFLOPS: 838.061
+Custom FP16 Kernel Time: 0.281393 ms, gFLOPS: 821.666
 Custom Kernel Result sum: 2.90988e+07
 ✅ Finished Case6, output saved to custom_result_Case6_3136x576x64.txt
 
 🚀 Running Case7 with M=4096 N=4096 K=4096
-Custom FP16 Kernel Time: 60.326 ms, gFLOPS: 2278.27
+Custom FP16 Kernel Time: 65.9483 ms, gFLOPS: 2084.04
 Custom Kernel Result sum: 1.71801e+10
 ✅ Finished Case7, output saved to custom_result_Case7_4096x4096x4096.txt
 
 🚀 Running Case8 with M=1024 N=16384 K=16384
-Custom FP16 Kernel Time: 249.468 ms, gFLOPS: 2203.72
+Custom FP16 Kernel Time: 274.315 ms, gFLOPS: 2004.1
 Custom Kernel Result sum: 6.87197e+10
 ✅ Finished Case8, output saved to custom_result_Case8_1024x16384x16384.txt
 
 🚀 Running Case9 with M=4096 N=16384 K=14336
-Custom FP16 Kernel Time: 870.165 ms, gFLOPS: 2211.24
+Custom FP16 Kernel Time: 988.062 ms, gFLOPS: 1947.39
 Custom Kernel Result sum: 6.87195e+10
 ✅ Finished Case9, output saved to custom_result_Case9_4096x16384x14336.txt
 
 🚀 Running Case10 with M=32768 N=32768 K=32768
-Custom FP16 Kernel Time: 32255.6 ms, gFLOPS: 2181.6
+Custom FP16 Kernel Time: 35775.7 ms, gFLOPS: 1966.94
 Custom Kernel Result sum: 2.74878e+11
 ✅ Finished Case10, output saved to custom_result_Case10_32768x32768x32768.txt
 

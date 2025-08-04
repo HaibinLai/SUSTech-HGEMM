@@ -3,7 +3,9 @@
 NVCC = nvcc
 
 # flags
-NVCC_FLAGS = -arch=sm_70 -O3
+NVCC_FLAGS = -arch=sm_70 -O3 
+
+FLAGS=-Xptxas -v
 
 SRC_DIR = src
 

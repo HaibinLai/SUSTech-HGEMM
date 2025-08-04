@@ -100,7 +100,7 @@ __global__ void gemm_kernel_fp16_unroll
 
     if (row < M && col < N) {
         float val = 0.0f;
-        #pragma unroll
+        #pragma unroll 20
         for (int k = 0; k < K; ++k) {
             val += __half2float(A[row * K + k]) * __half2float(B[k * N + col]);
         }
@@ -334,6 +334,10 @@ __global__ void hgemm_tensorcore_wmma(
 }
 
 
+
+
+
+
 // Copyright 2023. All Rights Reserved.
 // Author: Bruce-Lee-LY
 // Date: 00:53:54 on Mon, Feb 13, 2023
@@ -412,17 +416,17 @@ void sustech_hgemm_fp16
     // dim3 block(32, 32); // 每个 block 有 1024 线程
     // dim3 grid((N+31)/32, (M+31)/32);
 
-    hgemm_tensorcore_wmma<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+    // hgemm_tensorcore_wmma<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+    // wmma_fp16_gemm_kernel<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
 
-
-    gemm_base_kernel_fp16<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+    // gemm_kernel_fp16_unroll<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
 
 
     // 选择合适的 kernel 实现
     // if(M >= 20000 && N >= 20000 && K >= 20000){
         // hgemm_kernel_fp16_cublas(A_fp16, B_fp16, C_fp16, M, N, K);
     // }else{
-    // gemm_kernel_fp16_unroll<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+
     // gemm_kernel_fp16_tilled_share2cols<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
     // }
 
