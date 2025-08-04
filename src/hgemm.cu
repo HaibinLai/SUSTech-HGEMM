@@ -69,8 +69,8 @@ __global__ void gemm_base_kernel_fp16
     int M, int N, int K
 ) 
 {
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = blockIdx.y * blockDim.y + threadIdx.y; // M方向
+    int col = blockIdx.x * blockDim.x + threadIdx.x; // N方向
 
     if (row < M && col < N) {
         float val = 0.0f;
@@ -113,10 +113,12 @@ __global__ void gemm_kernel_fp16_unroll
 
 /////////////////////////////////////////////////////////////////////
 //
-// Simple CUDA kernel with loop unrolling + tiled memory
+// Simple CUDA kernel with loop + coalescing
 //
 /////////////////////////////////////////////////////////////////////
-__global__ void gemm_kernel_fp16_tiled
+#define COA_BLOCK_SIZE 32  // 每个 thread block 计算 C 的 32x32 子块
+
+__global__ void gemm_kernel_fp16_coalescing
 (
     const __half* A,
     const __half* B, 
@@ -124,30 +126,21 @@ __global__ void gemm_kernel_fp16_tiled
     int M, int N, int K
 )
 {
-    // int row = blockIdx.y * BLOCK_SIZE + threadIdx.y;
-    // int col = blockIdx.x * BLOCK_SIZE + threadIdx.x;
-    const int row = blockIdx.x * BLOCK_SIZE + (threadIdx.x / BLOCK_SIZE);
-    const int col = blockIdx.y * BLOCK_SIZE + (threadIdx.x % BLOCK_SIZE);
+    int row = blockIdx.x * COA_BLOCK_SIZE + threadIdx.x / COA_BLOCK_SIZE;
+    int col = blockIdx.y * COA_BLOCK_SIZE + threadIdx.x % COA_BLOCK_SIZE;
 
-    float val = 0.0f;
+    float sum = 0.0f;
 
-    // 对应当前线程要计算的 C[row, col]
-    // 还是要遍历 K
-    // #pragma unroll
-    for (int t = 0; t < K; ++t) {
-        // 直接从 global memory 加载
-        if (row < M && t < K && col < N) {
-            float a = __half2float(A[row * K + t]);
-            float b = __half2float(B[t * N + col]);
-            val += a * b;
-        }
-    }
-
-    // 写回结果
     if (row < M && col < N) {
-        C[row * N + col] = __float2half(val);
+        #pragma unroll
+        for (int k = 0; k < K; ++k) {
+            // A[row, k], B[k, col]
+            sum += __half2float(A[row * K + k]) * __half2float(B[k * N + col]);
+        }
+        C[row * N + col] = __float2half(sum);
     }
 }
+
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -156,8 +149,8 @@ __global__ void gemm_kernel_fp16_tiled
 /////////////////////////////////////////////////////////////////////
 __global__ void gemm_kernel_fp16_unroll_tilled
 (
-    const __half* A, 
-    const __half* B, 
+    const __half* __restrict__ A,
+    const __half* __restrict__ B,
     __half* C, 
     int M, int N, int K
 ) 
@@ -294,6 +287,61 @@ __global__ void gemm_kernel_fp16_tilled_share2cols
 }
 
 
+
+
+using namespace nvcuda;
+
+// TILE 尺寸：WMMA 固定 tile 是 16x16x16
+#define WMMA_M 16
+#define WMMA_N 16
+#define WMMA_K 16
+
+__global__ void hgemm_tensorcore_wmma(
+    const __half *A, const __half *B, float *C,
+    int M, int N, int K)
+{
+    // 计算 warp 在 grid 中的位置
+    int warpM = (blockIdx.y * blockDim.y + threadIdx.y) / warpSize;
+    int warpN = blockIdx.x * (blockDim.x / warpSize) + threadIdx.x / warpSize;
+
+    // WMMA fragment：输入和输出
+    wmma::fragment<wmma::matrix_a, WMMA_M, WMMA_N, WMMA_K, __half, wmma::row_major> a_frag;
+    wmma::fragment<wmma::matrix_b, WMMA_M, WMMA_N, WMMA_K, __half, wmma::col_major> b_frag;
+    wmma::fragment<wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
+
+    wmma::fill_fragment(c_frag, 0.0f);
+
+    // 遍历 K 方向的 tiles
+    for (int k = 0; k < K; k += WMMA_K) {
+        // 计算要加载的地址
+        const __half *tile_ptr_A = A + warpM * WMMA_M * K + k;
+        const __half *tile_ptr_B = B + k * N + warpN * WMMA_N;
+
+        // Load A row-major, B col-major
+        wmma::load_matrix_sync(a_frag, tile_ptr_A, K);
+        wmma::load_matrix_sync(b_frag, tile_ptr_B, N);
+
+        // 计算
+        wmma::mma_sync(c_frag, a_frag, b_frag, c_frag);
+    }
+
+    // 存回 C：float accumulator, row-major
+    if (warpM * WMMA_M < M && warpN * WMMA_N < N) {
+        float *c_ptr = C + warpM * WMMA_M * N + warpN * WMMA_N;
+
+        wmma::store_matrix_sync(c_ptr, c_frag, N, wmma::mem_row_major);
+    }
+}
+
+
+// Copyright 2023. All Rights Reserved.
+// Author: Bruce-Lee-LY
+// Date: 00:53:54 on Mon, Feb 13, 2023
+//
+// Description: wmma async hgemm
+
+
+
 /////////////////////////////////////////////////////////////////////
 //
 // cuBLAS cublasGemmEx FP16 kernel 
@@ -330,6 +378,23 @@ void hgemm_kernel_fp16_cublas
 }
 
 
+#define CEIL_DIV(M, N) (((M) + (N)-1) / (N))
+void gemm_coalescing(
+    const __half* A_fp16, 
+    const __half* B_fp16, 
+    __half* C_fp16,
+    int M, int N, int K
+) 
+{
+    dim3 block(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 grid(CEIL_DIV(N, BLOCK_SIZE), CEIL_DIV(M, BLOCK_SIZE));
+
+    gemm_kernel_fp16_coalescing<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+}
+
+
+
+
 
 void sustech_hgemm_fp16
 (
@@ -341,22 +406,35 @@ void sustech_hgemm_fp16
 {
 
     dim3 block(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 grid((N + BLOCK_SIZE * 2 - 1) / (BLOCK_SIZE * 2),
-              (M + BLOCK_SIZE - 1) / BLOCK_SIZE);
+    // dim3 grid((N + 15) / 16, (M + 15) / 16);
+    dim3 grid((N + BLOCK_SIZE - 1) / BLOCK_SIZE, (M + BLOCK_SIZE - 1) / BLOCK_SIZE);
+
+    // dim3 block(32, 32); // 每个 block 有 1024 线程
+    // dim3 grid((N+31)/32, (M+31)/32);
+
+    hgemm_tensorcore_wmma<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+
+
+    gemm_base_kernel_fp16<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+
 
     // 选择合适的 kernel 实现
     // if(M >= 20000 && N >= 20000 && K >= 20000){
-    //     hgemm_kernel_fp16_cublas(A_fp16, B_fp16, C_fp16, M, N, K);
+        // hgemm_kernel_fp16_cublas(A_fp16, B_fp16, C_fp16, M, N, K);
     // }else{
-    // gemm_kernel_fp16_tilled_share2cols<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+    // gemm_kernel_fp16_unroll<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
     // gemm_kernel_fp16_tilled_share2cols<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
     // }
 
+    // gemm_coalescing(A_fp16, B_fp16, C_fp16, M, N, K);
+
     // gemm_kernel_fp16_tilled_share2cols<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
-    // gemm_base_kernel_fp16<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
     // gemm_kernel_fp16_unroll_tilled<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
 
-    gemm_kernel_fp16_tilled_share2cols<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+    // gridDim stays the same
+    // dim3 gridDim(CEIL_DIV(M, COA_BLOCK_SIZE), CEIL_DIV(N, COA_BLOCK_SIZE));
+    // make blockDim 1-dimensional, but don't change number of threads
+    // dim3 blockDim(COA_BLOCK_SIZE * COA_BLOCK_SIZE);
 
 
 
@@ -410,13 +488,13 @@ int main(int argc, char* argv[])
     double duration_custom = std::chrono::duration<double, std::milli>(end2 - start2).count();
 
     // 拷贝结果回host计算sum
-    std::vector<__half> C_cublas_host(M * N);
+    // std::vector<__half> C_cublas_host(M * N);
     std::vector<__half> C_custom_host(M * N);
     cudaMemcpy(C_custom_host.data(), d_C_custom, M * N * sizeof(__half), cudaMemcpyDeviceToHost);
 
-    float sum_cublas = 0.f, sum_custom = 0.f;
+    float sum_custom = 0.f;
     for (int i = 0; i < M * N; ++i) {
-        sum_cublas += __half2float(C_cublas_host[i]);
+        // sum_cublas += __half2float(C_cublas_host[i]);
         sum_custom += __half2float(C_custom_host[i]);
     }
 
