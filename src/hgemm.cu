@@ -132,7 +132,7 @@ __global__ void gemm_kernel_fp16_coalescing
     float sum = 0.0f;
 
     if (row < M && col < N) {
-        #pragma unroll
+        #pragma unroll 4
         for (int k = 0; k < K; ++k) {
             // A[row, k], B[k, col]
             sum += __half2float(A[row * K + k]) * __half2float(B[k * N + col]);
@@ -140,6 +140,47 @@ __global__ void gemm_kernel_fp16_coalescing
         C[row * N + col] = __float2half(sum);
     }
 }
+
+
+// #define COA_BLOCK_SIZE 32
+#define TILE_K_1 32  // 手动展开
+
+__global__ void gemm_kernel_fp16_k_tiled
+(
+    const __half* A,
+    const __half* B, 
+    __half* C,
+    int M, int N, int K
+)
+{
+    int row = blockIdx.x * COA_BLOCK_SIZE + threadIdx.x / COA_BLOCK_SIZE;
+    int col = blockIdx.y * COA_BLOCK_SIZE + threadIdx.x % COA_BLOCK_SIZE;
+
+    float sum = 0.0f;
+
+    if (row < M && col < N) {
+        int k = 0;
+        for (; k <= K - TILE_K_1; k += TILE_K_1) {
+            #pragma unroll
+            for (int i = 0; i < TILE_K_1; ++i) {
+                int kk = k + i;
+                float a = __half2float(A[row * K + kk]);
+                float b = __half2float(B[kk * N + col]);
+                sum += a * b;
+            }
+        }
+
+        // 处理K不能整除TILE_K的尾部
+        for (; k < K; ++k) {
+            float a = __half2float(A[row * K + k]);
+            float b = __half2float(B[k * N + col]);
+            sum += a * b;
+        }
+
+        C[row * N + col] = __float2half(sum);
+    }
+}
+
 
 
 /////////////////////////////////////////////////////////////////////
@@ -171,7 +212,7 @@ __global__ void gemm_kernel_fp16_unroll_tilled
     __shared__ __half B_tile[BLOCK_SIZE][BLOCK_SIZE];
 
   // 分块遍历 K 维度
-    // #pragma unroll
+    #pragma unroll 4
     for (int t = 0; t < (K + BLOCK_SIZE - 1) / BLOCK_SIZE; ++t) {
         // A 的 tile 中要加载的列
         int a_col = t * BLOCK_SIZE + tx;
@@ -195,7 +236,7 @@ __global__ void gemm_kernel_fp16_unroll_tilled
         __syncthreads(); // 等待所有线程加载完 tile
 
         // tile 内计算：遍历 tile 中的 k 维
-        // #pragma unroll
+        #pragma unroll
         for (int k = 0; k < BLOCK_SIZE; ++k) {
             val += __half2float(A_tile[ty][k]) * __half2float(B_tile[k][tx]);
         }
@@ -283,6 +324,60 @@ __global__ void gemm_kernel_fp16_tilled_share2cols
     }
     if (row < M && col1 < N) {
         C[row*N + col1] = __float2half(val1);
+    }
+}
+
+
+// #define BLOCK_SIZE 32
+#define TILE_K 4  // tile 内部的 K 方向展开
+
+__global__ void gemm_kernel_fp16_tilled_share2cols_tiledK
+(
+    const __half* A, 
+    const __half* B, 
+    __half* C,
+    int M, int N, int K
+) 
+{
+    int tx = threadIdx.x;
+    int ty = threadIdx.y;
+
+    int row = blockIdx.y * BLOCK_SIZE + ty;
+    int col0 = (blockIdx.x * BLOCK_SIZE) + tx;
+    // int col1 = col0 + BLOCK_SIZE;
+
+    float val0 = 0.0f;
+    // float val1 = 0.0f;
+
+    __shared__ __half A_tile[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ __half B_tile[BLOCK_SIZE][BLOCK_SIZE];
+
+    for (int t = 0; t < (K + BLOCK_SIZE - 1) / BLOCK_SIZE; ++t) {
+        int a_col = t * BLOCK_SIZE + tx;
+        int b_row = t * BLOCK_SIZE + ty;
+
+        // load A
+        A_tile[ty][tx] = (row < M && a_col < K) ? A[row * K + a_col] : __float2half(0.0f);
+        // load B
+        B_tile[ty][tx] = (b_row < K && col0 < N) ? B[b_row * N + col0] : __float2half(0.0f);
+
+        __syncthreads();
+
+        // tile compute in K direction with manual unrolling
+        #pragma unroll
+        for (int kk = 0; kk < BLOCK_SIZE; kk += TILE_K) {
+            #pragma unroll
+            for (int k = 0; k < TILE_K; ++k) {
+                float a_val = __half2float(A_tile[ty][kk + k]);
+                val0 += a_val * __half2float(B_tile[kk + k][tx]);
+            }
+        }
+
+        __syncthreads();
+    }
+
+    if (row < M && col0 < N) {
+        C[row * N + col0] = __float2half(val0);
     }
 }
 
@@ -390,10 +485,11 @@ void gemm_coalescing(
     int M, int N, int K
 ) 
 {
-    dim3 block(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 grid(CEIL_DIV(N, BLOCK_SIZE), CEIL_DIV(M, BLOCK_SIZE));
+    dim3 block(COA_BLOCK_SIZE * COA_BLOCK_SIZE);
+    dim3 grid(CEIL_DIV(M, COA_BLOCK_SIZE), CEIL_DIV(N, COA_BLOCK_SIZE));
 
     gemm_kernel_fp16_coalescing<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+    // gemm_kernel_fp16_k_tiled<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
 }
 
 
@@ -427,13 +523,11 @@ void sustech_hgemm_fp16
         // hgemm_kernel_fp16_cublas(A_fp16, B_fp16, C_fp16, M, N, K);
     // }else{
 
-    // gemm_kernel_fp16_tilled_share2cols<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
     // }
-
+    // gemm_kernel_fp16_unroll_tilled<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
+    gemm_kernel_fp16_tilled_share2cols_tiledK<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
     // gemm_coalescing(A_fp16, B_fp16, C_fp16, M, N, K);
 
-    // gemm_kernel_fp16_tilled_share2cols<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
-    // gemm_kernel_fp16_unroll_tilled<<<grid, block>>>(A_fp16, B_fp16, C_fp16, M, N, K);
 
     // gridDim stays the same
     // dim3 gridDim(CEIL_DIV(M, COA_BLOCK_SIZE), CEIL_DIV(N, COA_BLOCK_SIZE));
