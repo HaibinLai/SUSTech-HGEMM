@@ -1,1 +1,4 @@
+# 禁止 GitHub Linguist 把 .ipynb 识别为 Jupyter Notebook
+*.ipynb linguist-language=Text
 *.ipynb linguist-detectable=false
+*.ipynb linguist-generated
